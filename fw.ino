@@ -1,23 +1,3 @@
-/**************************************************************************
- This is an example for our Monochrome OLEDs based on SSD1306 drivers
-
- Pick one up today in the adafruit shop!
- ------> http://www.adafruit.com/category/63_98
-
- This example is for a 128x32 pixel display using I2C to communicate
- 3 pins are required to interface (two I2C and one reset).
-
- Adafruit invests time and resources providing this open
- source code, please support Adafruit and open-source
- hardware by purchasing products from Adafruit!
-
- Written by Limor Fried/Ladyada for Adafruit Industries,
- with contributions from the open source community.
- BSD license, check license.txt for more information
- All text above, and the splash screen below must be
- included in any redistribution.
- **************************************************************************/
-
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -42,13 +22,24 @@ int sw1plus = 10;
 int sw1minus = 12;
 
 // status variables
-int swSum = -1;
-int gameStarted = 0;            // Contains 0 if game have not started; -1 if L player starts; +1 if R player starts
+int swSum = -1;                 // Current buttons state
+int swPrevSum = -1;             // Previous button state
 
 // time variables
 long timeCurrent = 0;
-long timeLastResetButtonsCheck = 0;
-long timeoutResetButtons = 2000;
+
+long timeLastPressL = 0;
+long timeLastPressR = 0;
+long timeLastPressNothing = 0;
+long timeNotReset = 0;
+
+long timeoutButtonReset = 2000;  // Hold 2x buttons time to reset game
+long timeoutButtonLR = 200;      // Timeout for another button activation
+
+// score and turn variables
+int scoreL = 0;
+int scoreR = 0;
+int turnLR = 0;                  // Contains -1 if L player's turn; +1 if R player's turn; 0 if game have not started yet
 
 void setup() {
   pinMode(sw0plus, INPUT_PULLUP);
@@ -74,35 +65,87 @@ void setup() {
 
 void loop() {
   timeCurrent = millis();
-  swSum = digitalRead(sw0plus) * 2 + digitalRead(sw1plus);
+  swSum = 2*digitalRead(sw0plus) + digitalRead(sw1plus);
 
-  if (swSum == 0) {
-    reset();
-  } else {
-    timeLastResetButtonsCheck = timeCurrent;
+  switch (swSum) {
+    case 3:       // Nothing is pressed
+      action();
+      timeLastPressNothing = timeCurrent;
+      timeNotReset = timeCurrent;
+      swPrevSum = 3;
+      break;
+    case 2:       // R is pressed
+      timeNotReset = timeCurrent;
+      if (swPrevSum == 3 && timeCurrent > timeLastPressNothing + timeoutButtonLR) {
+        swPrevSum = 2;
+      }
+      break;
+    case 1:       // L is pressed
+      timeNotReset = timeCurrent;
+      if (swPrevSum == 3 && timeCurrent > timeLastPressNothing + timeoutButtonLR) {
+        swPrevSum = 1;
+      }
+      break;
+    case 0:       // Both are pressed
+      if (swPrevSum == 3 && timeCurrent > timeLastPressNothing + timeoutButtonLR) {
+        swPrevSum = 0;
+        // Action of reverting changes
+      }
+      if (timeCurrent > timeNotReset + timeoutButtonReset) {
+        swPrevSum = 0;
+        // Start new game
+        turnLR = 0;
+      }
+      break;
+    default:
+      break;
   }
 
-  if (gameStarted == 0) {
+  // If New game
+  if (turnLR == 0) {
     // "New game" print
     newgame();
-
-    if (swSum == 1) {
-      gameStarted = -1;
-      startL();
-    } else if (swSum == 2) {
-      gameStarted = 1;
-      startR();
-    }
   } else {
-
-    display.clearDisplay();
+    printIt();
   }
 }
 
-// Checks for 2xPressed buttons timeout and resets game
-void reset(void) {
-  if (timeCurrent > timeLastResetButtonsCheck + timeoutResetButtons) {
-    gameStarted = 0;
+// Action on buttons release, depending on what button was pressed
+void action(void) {
+  switch (swPrevSum) {
+    case 3:
+      // Nothing was pressed before
+      break;
+    case 2:
+      // R was pressed
+      if (turnLR == 0) {
+        startR();
+        turnLR = 1;
+      } else {
+        scoreR++;
+        if ((scoreL + scoreR)%2 == 0) {
+          turnLR*=-1;
+        }
+      }
+      break;
+    case 1:
+      // L was pressed
+      if (turnLR == 0) {
+        startL();
+        turnLR = -1;
+      } else {
+        scoreL++;
+        if ((scoreL + scoreR)%2 == 0) {
+          turnLR*=-1;
+        }
+      }
+      break;
+    case 0:
+      // both were pressed
+      // ADD HERE POSSIBILITY OF CANCEL PREVIOUS ACTION
+      break;
+    default:
+      break;
   }
 }
 
@@ -122,7 +165,7 @@ void newgame(void) {
 }
 
 void startL(void) {
-    display.clearDisplay();
+  display.clearDisplay();
 
   display.setCursor(0,0);                             // Start at top-left corner
   display.setTextSize(1);                             // Draw 2X-scale text
@@ -137,7 +180,7 @@ void startL(void) {
 }
 
 void startR(void) {
-    display.clearDisplay();
+  display.clearDisplay();
 
   display.setCursor(0,0);                             // Start at top-left corner
   display.setTextSize(1);                             // Draw 2X-scale text
@@ -151,6 +194,51 @@ void startR(void) {
   delay(2000);
 }
 
+void printIt(void) {
+  char bufferL[3];
+  char bufferR[3];
+  char turn[2];
+  char result[10];
+  
+  sprintf(bufferL, "%d", scoreL);
+  sprintf(bufferR, "%d", scoreR);
+
+  switch (turnLR) {
+    case -1:
+      turn[0] = '<';
+      break;
+    case 0:
+      turn[0] = '=';
+      break;
+    case 1:
+      turn[0] = '>';
+      break;
+    default:
+      break;
+  }
+  // Add null terminator to make it a valid C-style string
+  turn[1] = '\0';
+
+  if (scoreL < 10 && scoreR < 10) {
+    sprintf(result, "%s %s %s", bufferL, turn, bufferR);
+  } else if (scoreL >= 10 && scoreR < 10) {
+    sprintf(result, "%s%s %s", bufferL, turn, bufferR);
+  } else if (scoreL < 10 && scoreR >= 10) {
+    sprintf(result, "%s %s%s", bufferL, turn, bufferR);
+  } else {
+    sprintf(result, "%s%s%s", bufferL, turn, bufferR);
+  }
+
+  display.clearDisplay();
+
+  display.setTextSize(4);                     // Draw 4X-scale text
+  display.setTextColor(SSD1306_WHITE);        // Draw white text
+  display.setCursor(0,0);                     // Start at top-left corner
+  
+  display.println(result);
+
+  display.display();
+}
 // void testdrawstyles(void) {
 //   display.clearDisplay();
 
@@ -169,3 +257,4 @@ void startR(void) {
 //   display.display();
 //   delay(2000);
 // }
+
