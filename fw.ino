@@ -17,10 +17,10 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 
 // button pins
-int sw0plus = 0;
-int sw0minus = 2;
-int sw1plus = 10;
-int sw1minus = 12;
+int sw0plus = 10;
+int sw0minus = 12;
+int sw1plus = 0;
+int sw1minus = 2;
 
 
 // button status variables
@@ -38,7 +38,7 @@ long timeLastPressNothing = 0;
 long timeNotReset = 0;
 
 long timeoutButtonReset = 2000;  // Hold 2x buttons time to reset game
-long timeoutButtonLR = 200;      // Timeout for another button activation
+long timeoutButtonLR = 100;      // Timeout for another button activation
 
 
 // score and turn variables
@@ -439,4 +439,3 @@ void printIt(void) {
 
   display.display();
 }
-
