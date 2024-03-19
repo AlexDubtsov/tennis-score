@@ -20,10 +20,12 @@ bool ledRightOn = false;
 
 
 // button pins
-const int sw0plus = 0;
-const int sw0minus = 2;
-const int sw1plus = 10;
-const int sw1minus = 12;
+const byte sw0plus = 0;
+const byte sw0minus = 2;
+const byte sw1plus = 10;
+const byte sw1minus = 12;
+const byte sw2plus = A1;
+const byte sw3plus = A0;
 
 
 // button status variables
@@ -73,6 +75,8 @@ void setup() {
   pinMode(sw1plus, INPUT_PULLUP);
   pinMode(sw1minus, OUTPUT);
   digitalWrite(sw1minus, LOW);
+  pinMode(sw2plus, INPUT_PULLUP);
+  pinMode(sw3plus, INPUT_PULLUP);
 
   // LED pins init
   pinMode(ledLplus, OUTPUT);
@@ -84,6 +88,10 @@ void setup() {
   pinMode(ledRminus, OUTPUT);
   digitalWrite(ledRminus, LOW);
 
+  // Initialize serial communication at a baud rate of 9600
+  // Serial.begin(9600);
+
+  // Initialize LED screen
   lcd.init();
   lcd.backlight();
   lcd.setCursor(0, 0);
@@ -100,6 +108,7 @@ void setup() {
 
 
 void loop() {
+
   timeCurrent = millis();
 
   // LED blink processing
@@ -197,44 +206,54 @@ void newGame(void) {
 }
 
 int buttonState(void) {
+
   int rusultButton = buttonPressedNothing;
 
   // Reading button pin status
-  swSum = 2*digitalRead(sw0plus) + digitalRead(sw1plus);
+  int buttonL = !digitalRead(sw0plus);
+  int buttonR = !digitalRead(sw1plus);
+  int buttonL2 = !digitalRead(sw2plus);
+  int buttonR2 = !digitalRead(sw3plus);
+
+
+  // Send variable to the serial output
+  // Serial.println(buttonR2);
+
+  swSum = 2*buttonL + buttonR + buttonL2 + 2*buttonR2;
 
   // If to hold 2x buttons pressed for some time => Reset
-  if (swSum == 0 && (timeCurrent > timeNotReset + timeoutButtonReset)) {
+  if (swSum == 3 && (timeCurrent > timeNotReset + timeoutButtonReset)) {
     return buttonPressedReset;
   }
 
   // Different scenarios if different buttons are pressed
   switch (swSum) {
 
-    case 3:       // Nothing is pressed
+    case 0:       // Nothing is pressed
       // Decide what button is pressed this time
       rusultButton = buttonDecision();
       timeLastPressNothing = timeCurrent;
       timeNotReset = timeCurrent;
-      swPrevSum = 3;
+      swPrevSum = 0;
       break;
-    case 2:       // R is pressed
+    case 1:       // R is pressed
       timeNotReset = timeCurrent;
       // Button is considered pressed only if previous state was "released"
-      if (swPrevSum == 3 && timeCurrent > timeLastPressNothing + timeoutButtonLR) {
-        swPrevSum = 2;
-      }
-      break;
-    case 1:       // L is pressed
-      timeNotReset = timeCurrent;
-      // Button is considered pressed only if previous state was "released"
-      if (swPrevSum == 3 && timeCurrent > timeLastPressNothing + timeoutButtonLR) {
+      if (swPrevSum == 0 && timeCurrent > timeLastPressNothing + timeoutButtonLR) {
         swPrevSum = 1;
       }
       break;
-    case 0:       // Both are pressed
+    case 2:       // L is pressed
+      timeNotReset = timeCurrent;
       // Button is considered pressed only if previous state was "released"
-      if (swPrevSum == 3 && timeCurrent > timeLastPressNothing + timeoutButtonLR) {
-        swPrevSum = 0;
+      if (swPrevSum == 0 && timeCurrent > timeLastPressNothing + timeoutButtonLR) {
+        swPrevSum = 2;
+      }
+      break;
+    case 3:       // Both are pressed
+      // Button is considered pressed only if previous state was "released"
+      if (swPrevSum == 0 && timeCurrent > timeLastPressNothing + timeoutButtonLR) {
+        swPrevSum = 3;
       }
       break;
     default:
@@ -252,19 +271,19 @@ int buttonDecision(void) {
 
   switch (swPrevSum) {
 
-    case 3:
+    case 0:
       // Nothing was pressed before
       result = buttonPressedNothing;
       break;
-    case 2:
+    case 1:
       // R was pressed
       result = buttonPressedR;
       break;
-    case 1:
+    case 2:
       // L was pressed
       result = buttonPressedL;
       break;
-    case 0:
+    case 4:
       // both were pressed
       result = buttonPressedBoth;
       break;
@@ -465,9 +484,11 @@ void scoreRaiseR(void) {
 
   // Move score arrays one element front
   for (int i = numberOfTurnsToRemember-1; i > 0; i--) {
+
     scoreL[i] = scoreL[i-1];
     scoreR[i] = scoreR[i-1];
     turnLR[i] = turnLR[i-1]; 
+    
   }
 
   // Add 1 to scoreR[0]
