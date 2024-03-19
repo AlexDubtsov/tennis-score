@@ -13,6 +13,7 @@ const int ledLminus = 7;
 const int ledRplus = 8;
 const int ledRminus = 9;
 
+bool ledBlinkVictory = false;
 bool ledBlinksLeft = false;
 bool ledBlinksRight = false;
 bool ledLeftOn = false;
@@ -50,9 +51,11 @@ long timeLastPressR = 0;
 long timeLastPressNothing = 0;
 long timeNotReset = 0;
 
+const long timeGameStarts = 1000;  // How long show L or R start screen
 const long timeoutButtonReset = 2000;  // Hold 2x buttons time to reset game
-const long timeoutButtonLR = 100;      // Timeout for another button activation
-const long timeBlinkLED = 200;
+const long timeoutButtonLR = 150;      // Timeout for another button activation
+const long timeBlinkLED = 300;
+const long timeBlinkLEDVictory = 120;
 long timeLastSwitchLeftLED = 0;
 long timeLastSwitchRightLED = 0;
 
@@ -89,7 +92,7 @@ void setup() {
   digitalWrite(ledRminus, LOW);
 
   // Initialize serial communication at a baud rate of 9600
-  // Serial.begin(9600);
+  Serial.begin(9600);
 
   // Initialize LED screen
   lcd.init();
@@ -112,15 +115,22 @@ void loop() {
   timeCurrent = millis();
 
   // LED blink processing
-  if (ledBlinksLeft) {
-
-    leftLedBlink();
-
-  }
-  if (ledBlinksRight) {
+  if (ledBlinkVictory) {
     
-    rightLedBlink();
+    victoryLedBlink();
 
+  } else {
+
+    if (ledBlinksLeft) {
+
+      leftLedBlink();
+
+    }
+    if (ledBlinksRight) {
+    
+      rightLedBlink();
+
+    }
   }
 
   // Fetching buttons status
@@ -169,8 +179,6 @@ void loop() {
       } else {              // Game over, LED operation print result
 
         // Both LEDs blink
-        leftLED(1);
-        rightLED(1);
         victory(gameOver);
 
       }
@@ -283,7 +291,7 @@ int buttonDecision(void) {
       // L was pressed
       result = buttonPressedL;
       break;
-    case 4:
+    case 3:
       // both were pressed
       result = buttonPressedBoth;
       break;
@@ -359,11 +367,11 @@ int checkForVictory(void) {
 
     return 1;
 
-  } else if (scoreL[0] > 10 && scoreR[0] > 10 && scoreL[0]-scoreR[0] > 1) { // L and R score 11 or more, L wins 2 points
+  } else if (scoreL[0] >= 10 && scoreR[0] >= 10 && scoreL[0]-scoreR[0] > 1) { // L and R score 11 or more, L wins 2 points
 
     return -1;
 
-  } else if (scoreL[0] > 10 && scoreR[0] > 10 && scoreL[0]-scoreR[0] < -1) { // L and R score 11 or more, R wins 2 points
+  } else if (scoreL[0] >= 10 && scoreR[0] >= 10 && scoreL[0]-scoreR[0] < -1) { // L and R score 11 or more, R wins 2 points
 
     return 1;
 
@@ -377,6 +385,8 @@ int checkForVictory(void) {
 
 // Print out winner; winner == -1 means L won; winner == 1 means R won
 void victory(int winner) {
+
+  ledBlinkVictory = true;
 
   // print winner greetings
   // winner choice
@@ -451,7 +461,7 @@ void startR(void) {
   lcd.print(" Game  started! ");
   lcd.setCursor(0, 1);
   lcd.print("  R's turn now  ");
-  delay(2000);
+  delay(timeGameStarts);
 
 }
 
@@ -633,7 +643,7 @@ void printIt(void) {
   lcd.print("                ");
 }
 
-// Left LED 0 == OFF; 1 == BLINK; 2 = ON
+// Left LED 0 == OFF; 1 == BLINK; 2 = ON; 3 = VICTORY
 void leftLED(int mode) {
 
   switch (mode) {
@@ -641,29 +651,39 @@ void leftLED(int mode) {
     case (0):
 
       ledBlinksLeft = false;
+      ledBlinkVictory = false;
       digitalWrite(ledLplus, LOW);
       break;
 
     case (1):
 
       ledBlinksLeft = true;
+      ledBlinkVictory = false;
       break;
 
     case (2):
 
       ledBlinksLeft = false;
+      ledBlinkVictory = false;
       digitalWrite(ledLplus, HIGH);
+      break;
+
+    case (3):
+
+      ledBlinksLeft = false;
+      ledBlinkVictory = true;
       break;
 
     default:
 
       ledBlinksLeft = false;
+      ledBlinkVictory = false;
       break;
   }
 
 }
 
-// Right LED 0 == OFF; 1 == BLINK; 2 = ON
+// Right LED 0 == OFF; 1 == BLINK; 2 = ON; 3 = VICTORY
 void rightLED(int mode) {
 
   switch (mode) {
@@ -671,23 +691,34 @@ void rightLED(int mode) {
     case (0):
 
       ledBlinksRight = false;
+      ledBlinkVictory = false;
       digitalWrite(ledRplus, LOW);
       break;
 
     case (1):
 
       ledBlinksRight = true;
+      ledBlinkVictory = false;
       break;
 
     case (2):
 
       ledBlinksRight = false;
+      ledBlinkVictory = false;
       digitalWrite(ledRplus, HIGH);
       break;
+
+    case (3):
+
+      ledBlinksRight = false;
+      ledBlinkVictory = true;
+      break;
+
 
     default:
 
       ledBlinksRight = false;
+      ledBlinkVictory = false;
       break;
   }
 
@@ -726,6 +757,28 @@ void rightLedBlink(void) {
 
     } else {
 
+      digitalWrite(ledRplus, HIGH);
+
+    }
+    
+  }
+}
+
+void victoryLedBlink(void) {
+
+  if (timeCurrent > timeLastSwitchLeftLED + timeBlinkLEDVictory) {
+
+    timeLastSwitchLeftLED = timeCurrent;
+    ledLeftOn = !ledLeftOn;
+
+    if (ledLeftOn) {
+
+      digitalWrite(ledLplus, LOW);
+      digitalWrite(ledRplus, LOW);
+
+    } else {
+
+      digitalWrite(ledLplus, HIGH);
       digitalWrite(ledRplus, HIGH);
 
     }

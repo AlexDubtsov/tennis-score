@@ -1,36 +1,38 @@
 # tennis-score
 
-Here are docs for my score calculating device, based on Arduino platform
+Here are instructions for my score calculating device, based on the Arduino platform.
 
 ## How to use it
 
-- Plug USB wire to any 5V power source
+- Plug the USB wire into any 5V power source.
 
-Greetings screen will appear
+The greetings screen will appear.
 
-- Press any button
+- Press any button.
 
-Start New Game menu now is on the screen
+The "Start New Game" menu will now appear on the screen.
 
-- Press L or R button depending on who's first turn is in this game
+- Press the L or R button depending on whose turn it is first in this game.
 
-Now if any of players gets score:
+If either player gets a score:
 
-- Press once corresponding, L or R, button.
+- Press the corresponding L or R button once.
 
-There is score counter on LCD screen
+The score counter will display on the LCD screen.
 
-LEDs on sides of the box indicate who's turn is now.
+LEDs on the sides of the box will indicate whose turn it is now.
 
-If L or R LED blinks that means that player's first turn is now.
-If L or R LED is continiously on that means there is second turn
-Both LEDs blinking means Game is over. Check scores on the screen.
+If the L or R LED blinks, that means it's the player's first turn now.
 
-- Long press of 2 buttons starts New game
+If the L or R LED is continuously on, that means it's the second turn.
 
-- Short press of 2 buttons makes cancel of last score change
+Both LEDs blinking means the game is over. Check scores on the screen.
 
-You can cancel up to 20 last changes
+- Long press on both buttons starts a new game.
+
+- Short press on both buttons cancels the last score change.
+
+You can cancel up to 20 last changes.
 
 #### Thank you!
 
