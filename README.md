@@ -4,7 +4,7 @@ Thanks to [Markus Oliver Annuk](https://github.com/markusoliverannuk) we have te
 
 And there is score counting device that I've crafted.
 
-Check [photo](https://github.com/AlexDubtsov/tennis-score) of it.
+Check [photo](https://github.com/AlexDubtsov/tennis-score/blob/main/20240319_093558.jpg) of it.
 
 ## How to use it
 
