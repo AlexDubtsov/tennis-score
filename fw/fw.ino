@@ -40,7 +40,7 @@ const long delayGameStart = 700;  // How long show L or R start screen
 const long timeoutButtonReset = 2000;  // Hold 2x buttons time to reset game
 const long timeoutButtonLR = 50;      // Timeout for another button activation
 const long timeoutBetweenActions = 500;      // Timeout between single button actions
-const long delayGameReset = 1500;  // Delay after game reset
+const long delayGameReset = 3000;  // Delay after game reset
 
 
 // LED status: 0 == OFF; 1 = ON; 2 == BLINK low freq; 3 = VICTORY blink; 4 = BUTTON blink

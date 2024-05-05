@@ -1,8 +1,14 @@
 # tennis-score
 
-Here are instructions for my score calculating device, based on the Arduino platform.
+Thanks to [Markus Oliver Annuk](https://github.com/markusoliverannuk) we have tennis table at kood/Jõhvi school.
+
+And there is score counting device that I've crafted.
+
+Check [photo](https://github.com/AlexDubtsov/tennis-score) of it.
 
 ## How to use it
+
+Here are instructions for my score calculating device, based on the Arduino platform.
 
 - Plug the USB wire into any 5V power source.
 
